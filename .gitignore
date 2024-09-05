@@ -23,3 +23,5 @@ coverage/
 
 # Debugging logs
 *.log
+
+*.zip
