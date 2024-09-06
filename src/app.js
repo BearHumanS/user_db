@@ -19,6 +19,7 @@ app.use(
 
 // 사용자 관련 경로
 app.use("/users", userRoutes);
+// AWS Elastic BeansTalk 로드 벨런서 상태 체크
 app.use("/", healthCheckRoutes);
 
 // 서버 실행
