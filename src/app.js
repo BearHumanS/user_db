@@ -1,5 +1,6 @@
 import express from "express";
 import userRoutes from "./routes/userRoutes.js";
+import healthCheckRoutes from "./routes/healthCheckRoutes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -18,6 +19,7 @@ app.use(
 
 // 사용자 관련 경로
 app.use("/users", userRoutes);
+app.use("/", healthCheckRoutes);
 
 // 서버 실행
 app.listen(PORT, () => {
