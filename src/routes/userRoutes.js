@@ -1,7 +1,7 @@
 // src/routes/userRoutes.js
 import express from "express";
 import { register, login, logout } from "../controllers/userController.js";
-import { verifyToken } from "../middleware/authMiddleware.js";
+import { authenticate } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -12,6 +12,6 @@ router.post("/register", register);
 router.post("/login", login);
 
 // 로그아웃 API
-router.post("/logout", verifyToken, logout);
+router.post("/logout", authenticate, logout);
 
 export default router;

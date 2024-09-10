@@ -39,12 +39,12 @@ app.use("/", healthCheckRoutes);
 app.use("/protected", authenticate);
 
 // 404 핸들링
-app.use((_, res, _) => {
+app.use((_, res) => {
   res.status(404).json({ message: "Not Found" });
 });
 
 // 에러 핸들링 미들웨어
-app.use((err, _, res, _) => {
+app.use((err, _, res) => {
   console.error(err.stack);
   res.status(500).json({ message: "Internal Server Error" });
 });
