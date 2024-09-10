@@ -13,4 +13,9 @@ router.get("/dashboard", authenticate, (req, res) => {
   res.json({ message: "Dashboard data", user: req.user });
 });
 
+// 프로필 라우트
+router.get("/", authenticate, (req, res) => {
+  res.json({ message: "Main data", user: req.user });
+});
+
 export default router;
