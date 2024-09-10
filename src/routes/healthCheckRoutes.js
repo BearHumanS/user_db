@@ -3,7 +3,7 @@ import express from "express";
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
+router.get("/", (_, res) => {
   res.status(200).send("OK");
 });
 
