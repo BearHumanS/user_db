@@ -2,19 +2,21 @@ import jwt from "jsonwebtoken";
 
 const SECRET_KEY = process.env.JWT_SECRET_KEY;
 
-export const verifyToken = (req, res, next) => {
-  const token = req.headers["authorization"]?.split(" ")[1];
+// 인증 미들웨어
+export const authenticate = (req, res, next) => {
+  // 쿠키에서 JWT 토큰을 가져옴
+  const token = req.cookies.token;
 
   if (!token) {
-    return res.status(403).json({ message: "Token required" });
+    return res.status(401).json({ message: "Authentication required" });
   }
 
-  jwt.verify(token, SECRET_KEY, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Invalid token" });
-    }
-
-    req.user = decoded; // JWT의 payload에서 사용자 정보 저장
-    next();
-  });
+  try {
+    // JWT 토큰 검증
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded; // 사용자 정보 저장
+    next(); // 다음 미들웨어로 넘어감
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
 };
