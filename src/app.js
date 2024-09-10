@@ -1,12 +1,12 @@
 import express from "express";
 import userRoutes from "./routes/userRoutes.js";
 import healthCheckRoutes from "./routes/healthCheckRoutes.js";
+import protectedRoutes from "./routes/protectedRoutes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import morgan from "morgan";
-import { authenticate } from "./middleware/authMiddleware.js";
 
 // 환경 변수 로드
 dotenv.config();
@@ -36,7 +36,7 @@ app.use("/users", userRoutes);
 // AWS Elastic BeansTalk 로드 벨런서 상태 체크
 app.use("/", healthCheckRoutes);
 // 사용자 관련 Route관리
-app.use("/protected", authenticate);
+app.use("/protected", protectedRoutes);
 
 // 404 핸들링
 app.use((_, res) => {
