@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../config/db.js";
-import cookieParser from "cookie-parser";
 
 const SECRET_KEY = process.env.JWT_SECRET_KEY;
 
