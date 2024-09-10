@@ -1,6 +1,5 @@
 import express from "express";
-import { authenticate } from "./middlewares/authenticate";
-
+import { authenticate } from "../middleware/authMiddleware.js";
 const router = express.Router();
 
 // 프로필 라우트
