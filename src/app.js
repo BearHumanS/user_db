@@ -26,7 +26,7 @@ app.use(
     origin: ["https://www.emotional.today", "https://api.emotional.today"],
     credentials: true, // 쿠키와 함께 요청을 보낼 수 있도록 허용
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // 허용할 메서드 설정
-    allowedHeaders: ["Content-Type", "Authorization"], // 요청에 허용할 헤더 설정
+    allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"], // 요청에 허용할 헤더 설정
   })
 );
 
