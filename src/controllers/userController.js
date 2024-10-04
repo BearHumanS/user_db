@@ -91,20 +91,20 @@ export const verifyCode = async (req, res) => {
 
     // verified 필드 업데이트
     await pool.query(
-      "UPDATE email_verifications SET verified = 1 WHERE eamil =? AND verification_code =?",
+      "UPDATE email_verifications SET verified = 1 WHERE email = ? AND verification_code = ?",
       [email, verificationCode]
     );
 
     res.status(200).json({ message: "인증코드가 확인되었습니다." });
   } catch (error) {
     console.error("인증 도중 에러 발생:", error);
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: error.message || "Server error" });
   }
 };
 
 // 사용자 등록 API
 export const register = async (req, res) => {
-  const { email, password, confirmPassword, verificationCode } = req.body;
+  const { email, password, confirmPassword } = req.body;
 
   try {
     // 비밀번호와 비밀번호 확인 일치 여부 확인
