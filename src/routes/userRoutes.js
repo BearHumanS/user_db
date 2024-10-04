@@ -8,6 +8,7 @@ import {
   requestPasswordReset,
   resetPassword,
   verifyCode,
+  deleteUser,
 } from "../controllers/userController.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 
@@ -33,5 +34,8 @@ router.post("/request", requestPasswordReset);
 
 // 비밀번호 재설정 API
 router.post("/reset", resetPassword);
+
+// 회원탈퇴 API
+router.delete("/delete/:userId", deleteUser);
 
 export default router;
