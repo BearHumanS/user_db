@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import pool from "../config/db.js";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { v4 as uuidv4 } from "uuid";
 
 const SECRET_KEY = process.env.JWT_SECRET_KEY;
 
@@ -102,55 +103,63 @@ export const verifyCode = async (req, res) => {
   }
 };
 
-// 사용자 등록 API
+// 회원가입 API
 export const register = async (req, res) => {
   const { email, password, confirmPassword } = req.body;
+  const connection = await pool.getConnection(); // 트랜잭션 사용을 위해 커넥션 가져오기
 
   try {
+    await connection.beginTransaction(); // 트랜잭션 시작
+
     // 비밀번호와 비밀번호 확인 일치 여부 확인
     if (password !== confirmPassword) {
+      await connection.rollback(); // 에러 발생 시 롤백
       return res.status(400).json({ message: "비밀번호가 일치하지 않습니다." });
     }
-    // 먼저 이메일이 이미 존재하는지 확인
-    const [existingUser] = await pool.query(
+
+    // 이미 존재하는 이메일 확인
+    const [existingUser] = await connection.query(
       "SELECT 1 FROM users WHERE email = ? LIMIT 1",
       [email]
     );
-
     if (existingUser.length > 0) {
+      await connection.rollback(); // 에러 발생 시 롤백
       return res.status(400).json({ message: "이미 등록된 이메일입니다." });
     }
 
     // 인증이 완료되었는지 확인
-    const [verifiedEntry] = await pool.query(
+    const [verifiedEntry] = await connection.query(
       "SELECT verified FROM email_verifications WHERE email = ? AND verified = 1",
       [email]
     );
-
     if (verifiedEntry.length === 0) {
+      await connection.rollback(); // 에러 발생 시 롤백
       return res.status(400).json({ message: "이메일 인증이 필요합니다." });
     }
 
     // 비밀번호 해시화
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // UUID 생성
+    const userId = uuidv4(); // 사용자 ID로 UUID 사용
+
     // 사용자 등록
-    await pool.query(
-      "INSERT INTO users (email, password_hash, email_verified) VALUES (?, ?, ?)",
-      [
-        email,
-        hashedPassword,
-        true, // 이메일 인증이 되었으므로 true
-      ]
+    await connection.query(
+      "INSERT INTO users (id, email, password_hash, email_verified) VALUES (?, ?, ?, ?)",
+      [userId, email, hashedPassword, true]
     );
 
     // 인증 기록 삭제 (사용 후 삭제)
-    await pool.query("DELETE FROM email_verifications WHERE email = ?", [
+    await connection.query("DELETE FROM email_verifications WHERE email = ?", [
       email,
     ]);
 
-    // 인증된 이메일을 테이블에 기록
-    await pool.query("INSERT INTO verified_emails (email) VALUES (?)", [email]);
+    // 인증된 이메일 기록
+    await connection.query("INSERT INTO verified_emails (email) VALUES (?)", [
+      email,
+    ]);
+
+    await connection.commit(); // 모든 쿼리가 성공했을 때 커밋
 
     // 회원가입 후 JWT 발급 (자동 로그인)
     const token = jwt.sign({ id: userId, email }, SECRET_KEY, {
@@ -158,7 +167,7 @@ export const register = async (req, res) => {
     });
 
     // 세션 저장
-    await pool.query(
+    await connection.query(
       "INSERT INTO sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)",
       [userId, token, new Date(Date.now() + 3600000)] // 1시간 유효기간
     );
@@ -173,8 +182,11 @@ export const register = async (req, res) => {
 
     res.status(201).json({ message: "회원가입 및 로그인 성공" });
   } catch (error) {
+    await connection.rollback(); // 에러 발생 시 롤백
     console.error("회원가입 중 오류:", error);
     res.status(500).json({ message: "Server error" });
+  } finally {
+    connection.release(); // 커넥션 반환
   }
 };
 
@@ -346,6 +358,27 @@ export const resetPassword = async () => {
     res.status(200).json({ message: "패스워드 재설정이 완료되었습니다." });
   } catch (error) {
     console.error("재설정 요청 중에 발생한 에러", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// 회원탈퇴 API
+
+export const deleteUser = async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const [result] = await pool.query("DELETE FROM users WHERE id = ?", [
+      userId,
+    ]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "사용자를 찾을 수 없습니다." });
+    }
+
+    res.status(200).json({ message: "탈퇴가 성공적으로 처리되었습니다." });
+  } catch (error) {
+    console.error("탈퇴 요청 중 에러 발생:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
