@@ -152,7 +152,26 @@ export const register = async (req, res) => {
     // 인증된 이메일을 테이블에 기록
     await pool.query("INSERT INTO verified_emails (email) VALUES (?)", [email]);
 
-    res.status(201).json({ message: "회원가입 완료" });
+    // 회원가입 후 JWT 발급 (자동 로그인)
+    const token = jwt.sign({ id: userId, email }, SECRET_KEY, {
+      expiresIn: "1h", // 토큰 유효기간 설정
+    });
+
+    // 세션 저장
+    await pool.query(
+      "INSERT INTO sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)",
+      [userId, token, new Date(Date.now() + 3600000)] // 1시간 유효기간
+    );
+
+    // JWT를 HttpOnly 쿠키로 설정하여 클라이언트에게 전달
+    res.cookie("token", token, {
+      httpOnly: true, // 자바스크립트에서 접근 불가
+      secure: process.env.NODE_ENV === "production", // 프로덕션에서는 HTTPS를 사용
+      sameSite: "strict", // CSRF 방지
+      maxAge: 3600000, // 쿠키 만료 시간 (1시간)
+    });
+
+    res.status(201).json({ message: "회원가입 및 로그인 성공" });
   } catch (error) {
     console.error("회원가입 중 오류:", error);
     res.status(500).json({ message: "Server error" });
