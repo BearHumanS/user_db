@@ -23,6 +23,21 @@ export const sendVerificationCode = async (req, res) => {
   const { email } = req.body;
 
   try {
+    // 이미 존재하는 이메일인지 확인
+    const [existingUser] = await pool.query(
+      "SELECT 1 FROM users WHERE email = ? LIMIT 1",
+      [email]
+    );
+
+    if (existingUser.length > 0) {
+      return res.status(400).json({ message: "이미 등록된 이메일입니다." });
+    }
+
+    // 이전에 생성된 인증 코드가 있다면 삭제
+    await pool.query("DELETE FROM email_verifications WHERE email = ?", [
+      email,
+    ]);
+
     // 인증 코드 생성
     const verificationCode = crypto
       .randomBytes(3)
@@ -36,14 +51,10 @@ export const sendVerificationCode = async (req, res) => {
       .slice(0, 19)
       .replace("T", " ");
 
-    // 콘솔에서 확인
-    console.log("Current Time (nowUTC):", nowUTC);
-    console.log("Expiration Time (expiresAtUTC):", expiresAtUTC);
-
     // 데이터베이스 또는 세션에 저장 (임시로 저장)
     await pool.query(
       "INSERT INTO email_verifications (email, verification_code,created_at, expires_at) VALUES (?, ?, ?, ?)",
-      [email, verificationCode, nowUTC, expiresAtUTC] // 10분 유효
+      [email, verificationCode, nowUTC, expiresAtUTC]
     );
 
     const mailOption = {
@@ -62,6 +73,29 @@ export const sendVerificationCode = async (req, res) => {
   }
 };
 
+// 인증코드 확인 API
+export const verifyCode = async (req, res) => {
+  const { email, verificationCode } = req.body;
+
+  try {
+    const [codeEntry] = await pool.query(
+      "SELECT verification_code, expires_at FROM email_verifications WHERE email = ? AND verification_code = ? AND expires_at > NOW()",
+      [email, verificationCode]
+    );
+
+    if (codeEntry.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "유효하지 않거나 만료된 인증 코드입니다." });
+    }
+
+    res.status(200).json({ message: "인증코드가 확인되었습니다." });
+  } catch (error) {
+    console.error("인증 도중 에러 발생:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // 사용자 등록 API
 export const register = async (req, res) => {
   const { email, password, confirmPassword, verificationCode } = req.body;
@@ -73,7 +107,7 @@ export const register = async (req, res) => {
     }
     // 먼저 이메일이 이미 존재하는지 확인
     const [existingUser] = await pool.query(
-      "SELECT * FROM users WHERE email = ?",
+      "SELECT 1 FROM users WHERE email = ? LIMIT 1",
       [email]
     );
 
@@ -83,7 +117,7 @@ export const register = async (req, res) => {
 
     // 인증 코드가 유효한지 확인
     const [codeEntry] = await pool.query(
-      "SELECT * FROM email_verifications WHERE email = ? AND verification_code = ? AND expires_at > NOW()",
+      "SELECT verification_code, expires_at FROM email_verifications WHERE email = ? AND verification_code = ? AND expires_at > NOW()",
       [email, verificationCode]
     );
 
@@ -124,9 +158,10 @@ export const login = async (req, res) => {
 
   try {
     // 사용자 조회
-    const [rows] = await pool.query("SELECT * FROM users WHERE email = ?", [
-      email,
-    ]);
+    const [rows] = await pool.query(
+      "SELECT id, email, password_hash FROM users WHERE email = ? LIMIT 1",
+      [email]
+    );
     const user = rows[0];
 
     // 사용자가 없거나 비밀번호가 잘못된 경우
