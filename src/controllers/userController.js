@@ -89,6 +89,12 @@ export const verifyCode = async (req, res) => {
         .json({ message: "유효하지 않거나 만료된 인증 코드입니다." });
     }
 
+    // verified 필드 업데이트
+    await pool.query(
+      "UPDATE email_verifications SET verified = 1 WHERE eamil =? AND verification_code =?",
+      [email, verificationCode]
+    );
+
     res.status(200).json({ message: "인증코드가 확인되었습니다." });
   } catch (error) {
     console.error("인증 도중 에러 발생:", error);
@@ -115,16 +121,14 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "이미 등록된 이메일입니다." });
     }
 
-    // 인증 코드가 유효한지 확인
-    const [codeEntry] = await pool.query(
-      "SELECT verification_code, expires_at FROM email_verifications WHERE email = ? AND verification_code = ? AND expires_at > NOW()",
-      [email, verificationCode]
+    // 인증이 완료되었는지 확인
+    const [verifiedEntry] = await pool.query(
+      "SELECT verified FROM email_verifications WHERE email = ? AND verified = 1",
+      [email]
     );
 
-    if (codeEntry.length === 0) {
-      return res
-        .status(400)
-        .json({ message: "유효하지 않거나 만료된 인증 코드입니다." });
+    if (verifiedEntry.length === 0) {
+      return res.status(400).json({ message: "이메일 인증이 필요합니다." });
     }
 
     // 비밀번호 해시화
@@ -144,6 +148,9 @@ export const register = async (req, res) => {
     await pool.query("DELETE FROM email_verifications WHERE email = ?", [
       email,
     ]);
+
+    // 인증된 이메일을 테이블에 기록
+    await pool.query("INSERT INTO verified_emails (email) VALUES (?)", [email]);
 
     res.status(201).json({ message: "회원가입 완료" });
   } catch (error) {
