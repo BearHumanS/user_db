@@ -23,7 +23,11 @@ app.use(morgan("combined")); // 요청/응답 로깅
 // CORS 설정
 app.use(
   cors({
-    origin: ["https://www.emotional.today", "https://api.emotional.today"],
+    origin: [
+      "https://www.emotional.today",
+      "https://api.emotional.today",
+      "https://test.d2nn3b1ti2yjfk.amplifyapp.com/",
+    ],
     credentials: true, // 쿠키와 함께 요청을 보낼 수 있도록 허용
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // 허용할 메서드 설정
     allowedHeaders: ["Content-Type", "Authorization", "Set-Cookie"], // 요청에 허용할 헤더 설정
