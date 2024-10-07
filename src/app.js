@@ -27,6 +27,7 @@ app.use(
       "https://www.emotional.today",
       "https://api.emotional.today",
       "https://test.d2nn3b1ti2yjfk.amplifyapp.com",
+      "http://localhost:3001",
     ],
     credentials: true, // 쿠키와 함께 요청을 보낼 수 있도록 허용
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // 허용할 메서드 설정
