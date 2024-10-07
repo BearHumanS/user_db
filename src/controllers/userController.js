@@ -244,7 +244,7 @@ export const login = async (req, res) => {
       maxAge: 3600000, // 쿠키 만료 시간 (1시간)
     });
 
-    res.status(200).json({ message: "Login successful" });
+    res.status(200).json({ message: "로그인 성공" });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
