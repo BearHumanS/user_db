@@ -176,7 +176,7 @@ export const register = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true, // 자바스크립트에서 접근 불가
       secure: true, // 프로덕션에서는 HTTPS를 사용
-      sameSite: "none", // CSRF 방지
+      sameSite: "strict", // CSRF 방지
       maxAge: 3600000, // 쿠키 만료 시간 (1시간)
     });
 
@@ -240,7 +240,7 @@ export const login = async (req, res) => {
     res.cookie("token", token, {
       httpOnly: true, // 클라이언트에서 자바스크립트로 접근 불가
       secure: true, // HTTPS에서만 전송 (프로덕션 환경에서만)
-      sameSite: "none", // CSRF 방지
+      sameSite: "strict", // CSRF 방지
       maxAge: 3600000, // 쿠키 만료 시간 (1시간)
     });
 
