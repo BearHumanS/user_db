@@ -175,8 +175,8 @@ export const register = async (req, res) => {
     // JWT를 HttpOnly 쿠키로 설정하여 클라이언트에게 전달
     res.cookie("token", token, {
       httpOnly: true, // 자바스크립트에서 접근 불가
-      secure: process.env.NODE_ENV === "production", // 프로덕션에서는 HTTPS를 사용
-      sameSite: "lax", // CSRF 방지
+      secure: true, // 프로덕션에서는 HTTPS를 사용
+      sameSite: "none", // CSRF 방지
       maxAge: 3600000, // 쿠키 만료 시간 (1시간)
     });
 
@@ -239,8 +239,8 @@ export const login = async (req, res) => {
     // JWT를 HttpOnly 쿠키로 설정
     res.cookie("token", token, {
       httpOnly: true, // 클라이언트에서 자바스크립트로 접근 불가
-      secure: process.env.NODE_ENV === "production", // HTTPS에서만 전송 (프로덕션 환경에서만)
-      sameSite: "lax", // CSRF 방지
+      secure: true, // HTTPS에서만 전송 (프로덕션 환경에서만)
+      sameSite: "none", // CSRF 방지
       maxAge: 3600000, // 쿠키 만료 시간 (1시간)
     });
 
@@ -268,7 +268,7 @@ export const logout = async (req, res) => {
     // 로그아웃 시 쿠키에서 토큰 삭제
     res.clearCookie("token", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "strict",
     });
 
